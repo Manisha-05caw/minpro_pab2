@@ -15,7 +15,11 @@ Setiap pengguna memiliki akun pribadi sehingga data riwayat kesehatannya bersifa
 
 ### 🔐 Autentikasi Pengguna
 Aplikasi dilengkapi dengan sistem **Login dan Register** menggunakan Supabase. Pengguna cukup mendaftar dengan email dan password, lalu dapat langsung masuk ke dalam aplikasi. Sesi login tersimpan otomatis sehingga pengguna tidak perlu login ulang setiap membuka aplikasi.
+Berikut tampilan aplikasinya:
 
+https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-03-15%20181525.png?raw=true (login)
+
+https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-03-15%20181638.png?raw=true (register)
 
 
 ### 🏠 Dashboard Utama
@@ -24,22 +28,36 @@ Halaman utama menampilkan **ringkasan data kesehatan** pengguna, termasuk total 
 ### 📋 Manajemen Riwayat Kesehatan (CRUD)
 Pengguna dapat melakukan pengelolaan data riwayat kesehatan secara lengkap:
 - **Tambah** — mencatat riwayat kesehatan baru dengan mengisi form lengkap
+  
+  link img : https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-03-15%20181353.png?raw=true
+
 - **Lihat** — menampilkan seluruh daftar riwayat dalam tampilan card yang informatif
+
+link img : https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-03-15%20181443.png?raw=true
+  
 - **Edit** — memperbarui data riwayat yang sudah ada
+
+  link img : https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-03-15%20181304.png?raw=true
+  
 - **Hapus** — menghapus data dengan konfirmasi dialog agar tidak terjadi penghapusan tidak sengaja
 
 ### 📝 Form Input Lengkap & Tervalidasi
 Form pencatatan riwayat kesehatan terdiri dari:
 - **Tanggal Pemeriksaan** — dipilih menggunakan date picker kalender
-- **Nama Dokter / Faskes** — dilengkapi fitur *autocomplete* dengan saran nama dokter dan fasilitas kesehatan (Puskesmas, RS Umum, berbagai spesialis)
+- **Nama Dokter / Faskes** — dilengkapi fitur dropdown dengan saran nama dokter dan fasilitas kesehatan (Puskesmas, RS Umum, berbagai spesialis)
 - **Diagnosis** — hasil diagnosis dari dokter
 - **Obat yang Diresepkan** — daftar obat yang diberikan
-- **Tekanan Darah** — input sistolik dan diastolik secara terpisah, **hanya menerima angka** dengan validasi rentang normal (60–250 / 40–150 mmHg)
-- **Berat & Tinggi Badan** — dua field terpisah, **hanya menerima angka** dengan validasi rentang wajar
-- **Catatan Tambahan** — catatan bebas dari dokter atau kondisi lainnya
+- **Tekanan Darah** — input sistolik dan diastolik secara terpisah, dan hanya menerima angka.
+- **Berat & Tinggi Badan** — dua field terpisah, ini juga hanya menerima angka
+- **Catatan Tambahan** — catatan bebas dari dokter.
 
 ### 🌙 Light Mode & Dark Mode
 Pengguna dapat beralih antara tampilan terang dan gelap kapan saja melalui tombol toggle di halaman utama maupun ikon di AppBar. Perubahan tema berlaku secara instan di seluruh halaman aplikasi.
+
+link img : https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-03-15%20181158.png?raw=true
+
+https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-03-15%20181222.png?raw=true
+
 
 ### ☁️ Penyimpanan Cloud (Supabase)
 Seluruh data riwayat kesehatan disimpan secara aman di database **Supabase** dengan fitur Row Level Security (RLS), memastikan setiap pengguna hanya dapat mengakses data miliknya sendiri.
@@ -110,9 +128,9 @@ Seluruh data riwayat kesehatan disimpan secara aman di database **Supabase** den
 
 ---
 
-## 🛠️ Teknologi yang Digunakan
+## 🛠️ Tools yang Digunakan
 
-| Teknologi | Kegunaan |
+| Tools | Kegunaan |
 |-----------|---------|
 | **Flutter** | Framework utama pengembangan aplikasi mobile |
 | **Dart** | Bahasa pemrograman |
