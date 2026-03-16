@@ -5,8 +5,6 @@ class SupabaseService {
   static final SupabaseClient _client = Supabase.instance.client;
   static const String _table = 'health_records';
 
-  // ── AUTH ─────────────────────────────────────────────────
-
   static User? get currentUser => _client.auth.currentUser;
 
   static Stream<AuthState> get authStream => _client.auth.onAuthStateChange;
@@ -31,8 +29,6 @@ class SupabaseService {
   static Future<void> logout() async {
     await _client.auth.signOut();
   }
-
-  // ── CRUD ─────────────────────────────────────────────────
 
   static Future<List<HealthRecord>> getRecords() async {
     final userId = currentUser?.id;

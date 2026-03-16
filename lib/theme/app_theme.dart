@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Light colors
   static const Color primary = Color(0xFF1565C0);
   static const Color primaryLight = Color(0xFFE3F2FD);
   static const Color accent = Color(0xFF42A5F5);
   static const Color danger = Color(0xFFEF5350);
   static const Color success = Color(0xFF43A047);
 
-  // ── LIGHT THEME ──────────────────────────────────────────
   static ThemeData get lightTheme => ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
@@ -73,7 +71,6 @@ class AppTheme {
         ),
       );
 
-  // ── DARK THEME ───────────────────────────────────────────
   static ThemeData get darkTheme => ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,

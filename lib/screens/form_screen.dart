@@ -4,7 +4,6 @@ import '../models/health_record.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 
-// Daftar saran nama dokter/faskes
 const List<String> _dokterSuggestions = [
   'Dr. Umum - Puskesmas',
   'Dr. Spesialis Jantung',
@@ -202,11 +201,8 @@ class _FormScreenState extends State<FormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Informasi Pemeriksaan ──────────────────────
               _sectionLabel('Informasi Pemeriksaan'),
               const SizedBox(height: 12),
-
-              // Tanggal
               TextFormField(
                 controller: _tanggalCtrl,
                 readOnly: true,
@@ -223,8 +219,6 @@ class _FormScreenState extends State<FormScreen> {
                     : null,
               ),
               const SizedBox(height: 14),
-
-              // Nama Dokter - Autocomplete
               Autocomplete<String>(
                 optionsBuilder: (textEditingValue) {
                   if (textEditingValue.text.isEmpty) return _dokterSuggestions;
@@ -235,7 +229,6 @@ class _FormScreenState extends State<FormScreen> {
                 onSelected: (val) => _namaDokterCtrl.text = val,
                 fieldViewBuilder:
                     (context, controller, focusNode, onSubmitted) {
-                  // Sinkronkan controller
                   if (_namaDokterCtrl.text.isNotEmpty &&
                       controller.text.isEmpty) {
                     controller.text = _namaDokterCtrl.text;
@@ -286,11 +279,8 @@ class _FormScreenState extends State<FormScreen> {
                 },
               ),
               const SizedBox(height: 22),
-
-              // ── Hasil Pemeriksaan ──────────────────────────
               _sectionLabel('Hasil Pemeriksaan'),
               const SizedBox(height: 12),
-
               TextFormField(
                 controller: _diagnosisCtrl,
                 decoration: const InputDecoration(
@@ -304,7 +294,6 @@ class _FormScreenState extends State<FormScreen> {
                     : null,
               ),
               const SizedBox(height: 14),
-
               TextFormField(
                 controller: _obatCtrl,
                 decoration: const InputDecoration(
@@ -318,12 +307,8 @@ class _FormScreenState extends State<FormScreen> {
                     : null,
               ),
               const SizedBox(height: 22),
-
-              // ── Data Vital ─────────────────────────────────
               _sectionLabel('Data Vital'),
               const SizedBox(height: 12),
-
-              // Tekanan Darah — dua field angka
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -384,8 +369,6 @@ class _FormScreenState extends State<FormScreen> {
                 ],
               ),
               const SizedBox(height: 14),
-
-              // Berat & Tinggi — dua field angka
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -442,8 +425,6 @@ class _FormScreenState extends State<FormScreen> {
                 ],
               ),
               const SizedBox(height: 22),
-
-              // ── Catatan ────────────────────────────────────
               _sectionLabel('Catatan Tambahan'),
               const SizedBox(height: 12),
               TextFormField(
@@ -458,7 +439,6 @@ class _FormScreenState extends State<FormScreen> {
                 ),
               ),
               const SizedBox(height: 28),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
