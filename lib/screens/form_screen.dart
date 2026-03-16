@@ -1,11 +1,28 @@
 import 'package:flutter/material.dart';
-import '../data/health_data.dart';
+import 'package:flutter/services.dart';
 import '../models/health_record.dart';
+import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 
-class FormScreen extends StatefulWidget {
-  final HealthRecord? record; // null = tambah baru, tidak null = edit
+// Daftar saran nama dokter/faskes
+const List<String> _dokterSuggestions = [
+  'Dr. Umum - Puskesmas',
+  'Dr. Spesialis Jantung',
+  'Dr. Spesialis Penyakit Dalam',
+  'Dr. Spesialis Anak',
+  'Dr. Spesialis Ortopedi',
+  'Dr. Spesialis THT',
+  'Dr. Spesialis Kulit',
+  'Dr. Spesialis Mata',
+  'Dr. Spesialis Saraf',
+  'Dr. Spesialis Kandungan',
+  'RS Umum Daerah',
+  'Klinik Pratama',
+  'Puskesmas',
+];
 
+class FormScreen extends StatefulWidget {
+  final HealthRecord? record;
   const FormScreen({super.key, this.record});
 
   @override
@@ -14,41 +31,62 @@ class FormScreen extends StatefulWidget {
 
 class _FormScreenState extends State<FormScreen> {
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController _tanggalCtrl;
+  late TextEditingController _namaDokterCtrl;
+  late TextEditingController _diagnosisCtrl;
+  late TextEditingController _obatCtrl;
+  late TextEditingController _sistolikCtrl;
+  late TextEditingController _diastolikCtrl;
+  late TextEditingController _beratCtrl;
+  late TextEditingController _tinggiCtrl;
+  late TextEditingController _catatanCtrl;
 
-  late TextEditingController _tanggalController;
-  late TextEditingController _namaDokterController;
-  late TextEditingController _diagnosisController;
-  late TextEditingController _obatController;
-  late TextEditingController _tekananDarahController;
-  late TextEditingController _beratTinggiController;
-  late TextEditingController _catatanController;
-
+  bool _loading = false;
   bool get isEdit => widget.record != null;
 
   @override
   void initState() {
     super.initState();
     final r = widget.record;
-    _tanggalController = TextEditingController(text: r?.tanggal ?? '');
-    _namaDokterController = TextEditingController(text: r?.namaDokter ?? '');
-    _diagnosisController = TextEditingController(text: r?.diagnosis ?? '');
-    _obatController = TextEditingController(text: r?.obat ?? '');
-    _tekananDarahController = TextEditingController(
-      text: r?.tekananDarah ?? '',
-    );
-    _beratTinggiController = TextEditingController(text: r?.beratTinggi ?? '');
-    _catatanController = TextEditingController(text: r?.catatan ?? '');
+
+    // Parse tekanan darah jika edit
+    String sistolik = '', diastolik = '';
+    if (r != null && r.tekananDarah.contains('/')) {
+      final parts = r.tekananDarah.split('/');
+      sistolik = parts[0].trim();
+      diastolik = parts[1].trim();
+    }
+
+    // Parse berat/tinggi jika edit
+    String berat = '', tinggi = '';
+    if (r != null && r.beratTinggi.contains('/')) {
+      final parts = r.beratTinggi.split('/');
+      berat = parts[0].replaceAll(RegExp(r'[^0-9.]'), '').trim();
+      tinggi = parts[1].replaceAll(RegExp(r'[^0-9.]'), '').trim();
+    }
+
+    _tanggalCtrl = TextEditingController(text: r?.tanggal ?? '');
+    _namaDokterCtrl = TextEditingController(text: r?.namaDokter ?? '');
+    _diagnosisCtrl = TextEditingController(text: r?.diagnosis ?? '');
+    _obatCtrl = TextEditingController(text: r?.obat ?? '');
+    _sistolikCtrl = TextEditingController(text: sistolik);
+    _diastolikCtrl = TextEditingController(text: diastolik);
+    _beratCtrl = TextEditingController(text: berat);
+    _tinggiCtrl = TextEditingController(text: tinggi);
+    _catatanCtrl = TextEditingController(text: r?.catatan ?? '');
   }
 
   @override
   void dispose() {
-    _tanggalController.dispose();
-    _namaDokterController.dispose();
-    _diagnosisController.dispose();
-    _obatController.dispose();
-    _tekananDarahController.dispose();
-    _beratTinggiController.dispose();
-    _catatanController.dispose();
+    _tanggalCtrl.dispose();
+    _namaDokterCtrl.dispose();
+    _diagnosisCtrl.dispose();
+    _obatCtrl.dispose();
+    _sistolikCtrl.dispose();
+    _diastolikCtrl.dispose();
+    _beratCtrl.dispose();
+    _tinggiCtrl.dispose();
+    _catatanCtrl.dispose();
     super.dispose();
   }
 
@@ -58,81 +96,93 @@ class _FormScreenState extends State<FormScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: AppTheme.primary),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      final formatted =
-          '${picked.day} ${_bulanIndo(picked.month)} ${picked.year}';
-      _tanggalController.text = formatted;
-    }
-  }
-
-  String _bulanIndo(int month) {
-    const bulan = [
-      '',
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    return bulan[month];
-  }
-
-  void _simpan() {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (isEdit) {
-      final updated = HealthRecord(
-        id: widget.record!.id,
-        tanggal: _tanggalController.text.trim(),
-        namaDokter: _namaDokterController.text.trim(),
-        diagnosis: _diagnosisController.text.trim(),
-        obat: _obatController.text.trim(),
-        tekananDarah: _tekananDarahController.text.trim(),
-        beratTinggi: _beratTinggiController.text.trim(),
-        catatan: _catatanController.text.trim(),
-      );
-      HealthData.updateRecord(updated);
-    } else {
-      final newRecord = HealthRecord(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        tanggal: _tanggalController.text.trim(),
-        namaDokter: _namaDokterController.text.trim(),
-        diagnosis: _diagnosisController.text.trim(),
-        obat: _obatController.text.trim(),
-        tekananDarah: _tekananDarahController.text.trim(),
-        beratTinggi: _beratTinggiController.text.trim(),
-        catatan: _catatanController.text.trim(),
-      );
-      HealthData.addRecord(newRecord);
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isEdit ? 'Data berhasil diperbarui!' : 'Data berhasil ditambahkan!',
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppTheme.primary),
         ),
-        backgroundColor: AppTheme.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: child!,
       ),
     );
-    Navigator.pop(context);
+    if (picked != null) {
+      const bulan = [
+        '',
+        'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember'
+      ];
+      _tanggalCtrl.text = '${picked.day} ${bulan[picked.month]} ${picked.year}';
+    }
+  }
+
+  Future<void> _simpan() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
+
+    final tekananDarah =
+        '${_sistolikCtrl.text.trim()}/${_diastolikCtrl.text.trim()}';
+    final beratTinggi =
+        '${_beratCtrl.text.trim()}kg / ${_tinggiCtrl.text.trim()}cm';
+    final userId = SupabaseService.currentUser?.id ?? '';
+
+    try {
+      if (isEdit) {
+        final updated = HealthRecord(
+          id: widget.record!.id,
+          userId: userId,
+          tanggal: _tanggalCtrl.text.trim(),
+          namaDokter: _namaDokterCtrl.text.trim(),
+          diagnosis: _diagnosisCtrl.text.trim(),
+          obat: _obatCtrl.text.trim(),
+          tekananDarah: tekananDarah,
+          beratTinggi: beratTinggi,
+          catatan: _catatanCtrl.text.trim(),
+        );
+        await SupabaseService.updateRecord(updated);
+      } else {
+        final newRecord = HealthRecord(
+          id: '',
+          userId: userId,
+          tanggal: _tanggalCtrl.text.trim(),
+          namaDokter: _namaDokterCtrl.text.trim(),
+          diagnosis: _diagnosisCtrl.text.trim(),
+          obat: _obatCtrl.text.trim(),
+          tekananDarah: tekananDarah,
+          beratTinggi: beratTinggi,
+          catatan: _catatanCtrl.text.trim(),
+        );
+        await SupabaseService.addRecord(newRecord);
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(isEdit
+            ? 'Data berhasil diperbarui!'
+            : 'Data berhasil ditambahkan!'),
+        backgroundColor: AppTheme.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Gagal menyimpan data. Coba lagi.'),
+        backgroundColor: AppTheme.danger,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -152,81 +202,277 @@ class _FormScreenState extends State<FormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Informasi Pemeriksaan ──────────────────────
               _sectionLabel('Informasi Pemeriksaan'),
               const SizedBox(height: 12),
-              _buildField(
-                controller: _tanggalController,
-                label: 'Tanggal Pemeriksaan',
-                icon: Icons.calendar_today_outlined,
+
+              // Tanggal
+              TextFormField(
+                controller: _tanggalCtrl,
                 readOnly: true,
                 onTap: _pickDate,
-                hint: 'Pilih tanggal',
+                decoration: const InputDecoration(
+                  labelText: 'Tanggal Pemeriksaan *',
+                  prefixIcon: Icon(Icons.calendar_today_outlined,
+                      color: AppTheme.primary),
+                  suffixIcon:
+                      Icon(Icons.arrow_drop_down, color: AppTheme.primary),
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Tanggal tidak boleh kosong'
+                    : null,
               ),
               const SizedBox(height: 14),
-              _buildField(
-                controller: _namaDokterController,
-                label: 'Nama Dokter / Faskes',
-                icon: Icons.person_outline,
-                hint: 'Contoh: Dr. Andi Santoso',
+
+              // Nama Dokter - Autocomplete
+              Autocomplete<String>(
+                optionsBuilder: (textEditingValue) {
+                  if (textEditingValue.text.isEmpty) return _dokterSuggestions;
+                  return _dokterSuggestions.where((s) => s
+                      .toLowerCase()
+                      .contains(textEditingValue.text.toLowerCase()));
+                },
+                onSelected: (val) => _namaDokterCtrl.text = val,
+                fieldViewBuilder:
+                    (context, controller, focusNode, onSubmitted) {
+                  // Sinkronkan controller
+                  if (_namaDokterCtrl.text.isNotEmpty &&
+                      controller.text.isEmpty) {
+                    controller.text = _namaDokterCtrl.text;
+                  }
+                  controller.addListener(
+                      () => _namaDokterCtrl.text = controller.text);
+                  return TextFormField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    decoration: const InputDecoration(
+                      labelText: 'Nama Dokter / Faskes *',
+                      prefixIcon:
+                          Icon(Icons.person_outline, color: AppTheme.primary),
+                      hintText: 'Ketik atau pilih dari saran',
+                    ),
+                    validator: (_) => (_namaDokterCtrl.text.trim().isEmpty)
+                        ? 'Nama dokter tidak boleh kosong'
+                        : null,
+                  );
+                },
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(10),
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width - 40,
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, index) {
+                            final option = options.elementAt(index);
+                            return ListTile(
+                              dense: true,
+                              leading: const Icon(Icons.local_hospital_outlined,
+                                  color: AppTheme.primary, size: 18),
+                              title: Text(option,
+                                  style: const TextStyle(fontSize: 14)),
+                              onTap: () => onSelected(option),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 22),
+
+              // ── Hasil Pemeriksaan ──────────────────────────
               _sectionLabel('Hasil Pemeriksaan'),
               const SizedBox(height: 12),
-              _buildField(
-                controller: _diagnosisController,
-                label: 'Diagnosis',
-                icon: Icons.medical_information_outlined,
-                hint: 'Contoh: Hipertensi Ringan',
+
+              TextFormField(
+                controller: _diagnosisCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Diagnosis *',
+                  prefixIcon: Icon(Icons.medical_information_outlined,
+                      color: AppTheme.primary),
+                  hintText: 'Contoh: Hipertensi Ringan',
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Diagnosis tidak boleh kosong'
+                    : null,
               ),
               const SizedBox(height: 14),
-              _buildField(
-                controller: _obatController,
-                label: 'Obat yang Diresepkan',
-                icon: Icons.medication_outlined,
-                hint: 'Contoh: Amlodipine 5mg',
+
+              TextFormField(
+                controller: _obatCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Obat yang Diresepkan *',
+                  prefixIcon:
+                      Icon(Icons.medication_outlined, color: AppTheme.primary),
+                  hintText: 'Contoh: Amlodipine 5mg',
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Obat tidak boleh kosong'
+                    : null,
               ),
               const SizedBox(height: 22),
+
+              // ── Data Vital ─────────────────────────────────
               _sectionLabel('Data Vital'),
               const SizedBox(height: 12),
-              _buildField(
-                controller: _tekananDarahController,
-                label: 'Tekanan Darah',
-                icon: Icons.monitor_heart_outlined,
-                hint: 'Contoh: 120/80',
+
+              // Tekanan Darah — dua field angka
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _sistolikCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Sistolik *',
+                        prefixIcon: Icon(Icons.monitor_heart_outlined,
+                            color: AppTheme.primary),
+                        hintText: '120',
+                        suffixText: 'mmHg',
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Wajib diisi';
+                        final val = int.tryParse(v);
+                        if (val == null || val < 60 || val > 250) {
+                          return 'Nilai 60–250';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 18, left: 8, right: 8),
+                    child: Text('/',
+                        style: TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold)),
+                  ),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _diastolikCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Diastolik *',
+                        hintText: '80',
+                        suffixText: 'mmHg',
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Wajib diisi';
+                        final val = int.tryParse(v);
+                        if (val == null || val < 40 || val > 150) {
+                          return 'Nilai 40–150';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
-              _buildField(
-                controller: _beratTinggiController,
-                label: 'Berat / Tinggi Badan',
-                icon: Icons.straighten_outlined,
-                hint: 'Contoh: 65kg / 170cm',
+
+              // Berat & Tinggi — dua field angka
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _beratCtrl,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d{0,3}(\.\d{0,1})?')),
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Berat Badan *',
+                        prefixIcon: Icon(Icons.monitor_weight_outlined,
+                            color: AppTheme.primary),
+                        hintText: '65',
+                        suffixText: 'kg',
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Wajib diisi';
+                        final val = double.tryParse(v);
+                        if (val == null || val < 1 || val > 300) {
+                          return 'Nilai 1–300 kg';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _tinggiCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Tinggi Badan *',
+                        hintText: '170',
+                        suffixText: 'cm',
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Wajib diisi';
+                        final val = int.tryParse(v);
+                        if (val == null || val < 50 || val > 250) {
+                          return 'Nilai 50–250 cm';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 22),
+
+              // ── Catatan ────────────────────────────────────
               _sectionLabel('Catatan Tambahan'),
               const SizedBox(height: 12),
-              _buildField(
-                controller: _catatanController,
-                label: 'Catatan',
-                icon: Icons.notes_outlined,
-                hint: 'Catatan dari dokter atau kondisi lainnya...',
+              TextFormField(
+                controller: _catatanCtrl,
                 maxLines: 4,
-                isRequired: false,
+                decoration: const InputDecoration(
+                  labelText: 'Catatan',
+                  prefixIcon:
+                      Icon(Icons.notes_outlined, color: AppTheme.primary),
+                  hintText: 'Catatan dari dokter atau kondisi lainnya...',
+                  alignLabelWithHint: true,
+                ),
               ),
               const SizedBox(height: 28),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _simpan,
-                  icon: Icon(
-                    isEdit ? Icons.save_outlined : Icons.add_circle_outline,
-                  ),
-                  label: Text(
-                    isEdit ? 'Simpan Perubahan' : 'Tambah Riwayat',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  onPressed: _loading ? null : _simpan,
+                  icon: _loading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : Icon(isEdit
+                          ? Icons.save_outlined
+                          : Icons.add_circle_outline),
+                  label: Text(isEdit ? 'Simpan Perubahan' : 'Tambah Riwayat'),
                 ),
               ),
               const SizedBox(height: 12),
@@ -234,10 +480,8 @@ class _FormScreenState extends State<FormScreen> {
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Batal',
-                    style: TextStyle(color: AppTheme.textSecondary),
-                  ),
+                  child:
+                      const Text('Batal', style: TextStyle(color: Colors.grey)),
                 ),
               ),
             ],
@@ -259,50 +503,9 @@ class _FormScreenState extends State<FormScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: AppTheme.textPrimary,
-          ),
-        ),
+        Text(label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
       ],
-    );
-  }
-
-  Widget _buildField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    String? hint,
-    bool readOnly = false,
-    VoidCallback? onTap,
-    int maxLines = 1,
-    bool isRequired = true,
-  }) {
-    return TextFormField(
-      controller: controller,
-      readOnly: readOnly,
-      onTap: onTap,
-      maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-        prefixIcon: Icon(icon, color: AppTheme.primary, size: 20),
-        suffixIcon: readOnly
-            ? const Icon(Icons.arrow_drop_down, color: AppTheme.primary)
-            : null,
-      ),
-      validator: isRequired
-          ? (val) {
-              if (val == null || val.trim().isEmpty) {
-                return '$label tidak boleh kosong';
-              }
-              return null;
-            }
-          : null,
     );
   }
 }

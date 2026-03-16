@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import '../data/health_data.dart';
 import '../models/health_record.dart';
+import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import 'form_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final HealthRecord record;
-
   const DetailScreen({super.key, required this.record});
 
   @override
@@ -22,8 +21,8 @@ class _DetailScreenState extends State<DetailScreen> {
     _record = widget.record;
   }
 
-  void _hapus() {
-    showDialog(
+  Future<void> _hapus() async {
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -35,39 +34,42 @@ class _DetailScreenState extends State<DetailScreen> {
           ],
         ),
         content: Text(
-          'Apakah Anda yakin ingin menghapus data riwayat "${_record.diagnosis}"? Data yang dihapus tidak dapat dikembalikan.',
-          style: const TextStyle(color: AppTheme.textSecondary),
+          'Yakin ingin menghapus riwayat "${_record.diagnosis}"? Data tidak dapat dikembalikan.',
+          style: const TextStyle(color: Colors.grey),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Batal',
-              style: TextStyle(color: AppTheme.textSecondary),
-            ),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
-            onPressed: () {
-              HealthData.deleteRecord(_record.id);
-              Navigator.pop(context); // tutup dialog
-              Navigator.pop(context); // kembali ke list
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Data berhasil dihapus'),
-                  backgroundColor: AppTheme.danger,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              );
-            },
+            onPressed: () => Navigator.pop(context, true),
             child: const Text('Hapus'),
           ),
         ],
       ),
     );
+
+    if (confirm != true) return;
+
+    try {
+      await SupabaseService.deleteRecord(_record.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Data berhasil dihapus'),
+        backgroundColor: AppTheme.danger,
+        behavior: SnackBarBehavior.floating,
+      ));
+      Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Gagal menghapus data. Coba lagi.'),
+        backgroundColor: AppTheme.danger,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
   }
 
   @override
@@ -82,23 +84,20 @@ class _DetailScreenState extends State<DetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Edit',
             onPressed: () async {
               await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => FormScreen(record: _record)),
-              );
-              // Refresh data setelah edit
-              final updated = HealthData.records.firstWhere(
-                (r) => r.id == _record.id,
-                orElse: () => _record,
-              );
-              setState(() => _record = updated);
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => FormScreen(record: _record)));
+              final updated = await SupabaseService.getRecords();
+              final found = updated.where((r) => r.id == _record.id);
+              if (found.isNotEmpty && mounted) {
+                setState(() => _record = found.first);
+              }
             },
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.white70),
-            tooltip: 'Hapus',
             onPressed: _hapus,
           ),
         ],
@@ -106,7 +105,7 @@ class _DetailScreenState extends State<DetailScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header card
+            // Header gradient
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -123,55 +122,39 @@ class _DetailScreenState extends State<DetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white24,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
-                      Icons.medical_services_outlined,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                    child: const Icon(Icons.medical_services_outlined,
+                        color: Colors.white, size: 28),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    _record.diagnosis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text(_record.diagnosis,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text(
-                    _record.namaDokter,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
+                  Text(_record.namaDokter,
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 14)),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white24,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.calendar_today_outlined,
-                          color: Colors.white70,
-                          size: 14,
-                        ),
+                        const Icon(Icons.calendar_today_outlined,
+                            color: Colors.white70, size: 14),
                         const SizedBox(width: 6),
-                        Text(
-                          _record.tanggal,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                          ),
-                        ),
+                        Text(_record.tanggal,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 13)),
                       ],
                     ),
                   ),
@@ -183,7 +166,6 @@ class _DetailScreenState extends State<DetailScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // Vital signs row
                   Row(
                     children: [
                       Expanded(
@@ -197,7 +179,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _VitalCard(
-                          icon: Icons.straighten_outlined,
+                          icon: Icons.monitor_weight_outlined,
                           label: 'Berat / Tinggi',
                           value: _record.beratTinggi,
                           unit: '',
@@ -205,7 +187,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   _DetailSection(
                     icon: Icons.medication_outlined,
                     title: 'Obat yang Diresepkan',
@@ -226,20 +208,15 @@ class _DetailScreenState extends State<DetailScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: _hapus,
-                          icon: const Icon(
-                            Icons.delete_outline,
-                            color: AppTheme.danger,
-                          ),
-                          label: const Text(
-                            'Hapus',
-                            style: TextStyle(color: AppTheme.danger),
-                          ),
+                          icon: const Icon(Icons.delete_outline,
+                              color: AppTheme.danger),
+                          label: const Text('Hapus',
+                              style: TextStyle(color: AppTheme.danger)),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppTheme.danger),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                                borderRadius: BorderRadius.circular(10)),
                           ),
                         ),
                       ),
@@ -248,22 +225,22 @@ class _DetailScreenState extends State<DetailScreen> {
                         child: ElevatedButton.icon(
                           onPressed: () async {
                             await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => FormScreen(record: _record),
-                              ),
-                            );
-                            final updated = HealthData.records.firstWhere(
-                              (r) => r.id == _record.id,
-                              orElse: () => _record,
-                            );
-                            setState(() => _record = updated);
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        FormScreen(record: _record)));
+                            final updated = await SupabaseService.getRecords();
+                            final found =
+                                updated.where((r) => r.id == _record.id);
+                            if (found.isNotEmpty && mounted) {
+                              setState(() => _record = found.first);
+                            }
                           },
                           icon: const Icon(Icons.edit_outlined),
                           label: const Text('Edit'),
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14)),
                         ),
                       ),
                     ],
@@ -284,12 +261,11 @@ class _VitalCard extends StatelessWidget {
   final String value;
   final String unit;
 
-  const _VitalCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.unit,
-  });
+  const _VitalCard(
+      {required this.icon,
+      required this.label,
+      required this.value,
+      required this.unit});
 
   @override
   Widget build(BuildContext context) {
@@ -304,27 +280,15 @@ class _VitalCard extends StatelessWidget {
         children: [
           Icon(icon, color: AppTheme.primary, size: 20),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primary,
-            ),
-          ),
-          if (unit.isNotEmpty)
-            Text(
-              unit,
+          Text(value,
               style: const TextStyle(
-                fontSize: 11,
-                color: AppTheme.textSecondary,
-              ),
-            ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-          ),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primary)),
+          if (unit.isNotEmpty)
+            Text(unit,
+                style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       ),
     );
@@ -337,12 +301,11 @@ class _DetailSection extends StatelessWidget {
   final String content;
   final bool isSecondary;
 
-  const _DetailSection({
-    required this.icon,
-    required this.title,
-    required this.content,
-    this.isSecondary = false,
-  });
+  const _DetailSection(
+      {required this.icon,
+      required this.title,
+      required this.content,
+      this.isSecondary = false});
 
   @override
   Widget build(BuildContext context) {
@@ -350,7 +313,7 @@ class _DetailSection extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.primaryLight),
       ),
@@ -361,29 +324,19 @@ class _DetailSection extends StatelessWidget {
             children: [
               Icon(icon, size: 16, color: AppTheme.primary),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                  fontSize: 13,
-                ),
-              ),
+              Text(title,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 13)),
             ],
           ),
           const SizedBox(height: 10),
           const Divider(height: 1, color: AppTheme.primaryLight),
           const SizedBox(height: 10),
-          Text(
-            content,
-            style: TextStyle(
-              color: isSecondary
-                  ? AppTheme.textSecondary
-                  : AppTheme.textPrimary,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
+          Text(content,
+              style: TextStyle(
+                  color: isSecondary ? Colors.grey : null,
+                  fontSize: 14,
+                  height: 1.5)),
         ],
       ),
     );

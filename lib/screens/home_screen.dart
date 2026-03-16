@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import '../data/health_data.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
+import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import 'list_screen.dart';
 import 'form_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,18 +15,81 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _totalRecords = 0;
+  bool _loadingCount = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCount();
+  }
+
+  Future<void> _fetchCount() async {
+    try {
+      final records = await SupabaseService.getRecords();
+      if (mounted)
+        setState(() {
+          _totalRecords = records.length;
+          _loadingCount = false;
+        });
+    } catch (_) {
+      if (mounted) setState(() => _loadingCount = false);
+    }
+  }
+
+  Future<void> _logout() async {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Keluar'),
+        content: const Text('Apakah kamu yakin ingin keluar dari akun ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await SupabaseService.logout();
+              if (!mounted) return;
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()));
+            },
+            child: const Text('Keluar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final totalRecords = HealthData.records.length;
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDark;
+    final email = SupabaseService.currentUser?.email ?? '';
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 200,
             pinned: true,
-            backgroundColor: AppTheme.primary,
+            automaticallyImplyLeading: false,
+            actions: [
+              IconButton(
+                icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode,
+                    color: Colors.white),
+                tooltip: isDark ? 'Light Mode' : 'Dark Mode',
+                onPressed: () => themeProvider.toggleTheme(),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.white),
+                tooltip: 'Keluar',
+                onPressed: _logout,
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
@@ -34,31 +100,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                  padding: const EdgeInsets.fromLTRB(20, 80, 20, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Halo, Selamat Datang 👋',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
-                      ),
+                      const Text('Halo, Selamat Datang 👋',
+                          style:
+                              TextStyle(color: Colors.white70, fontSize: 14)),
                       const SizedBox(height: 4),
-                      const Text(
-                        'HealthRecord',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Kelola riwayat kesehatan Anda dengan mudah',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.85),
-                          fontSize: 13,
-                        ),
-                      ),
+                      const Text('HealthRecord',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Text(email,
+                          style: const TextStyle(
+                              color: Colors.white60, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -71,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Stat Card
+                  // Stat card
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -84,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primary.withOpacity(0.3),
+                          color: Color.fromRGBO(21, 101, 192, 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -92,44 +150,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.folder_shared_outlined,
-                          color: Colors.white,
-                          size: 40,
-                        ),
+                        const Icon(Icons.folder_shared_outlined,
+                            color: Colors.white, size: 40),
                         const SizedBox(width: 16),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '$totalRecords',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Text(
-                              'Total Riwayat Kesehatan',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
+                            _loadingCount
+                                ? const SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white, strokeWidth: 2))
+                                : Text(
+                                    '$_totalRecords',
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                            const Text('Total Riwayat Kesehatan',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 14)),
                           ],
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Menu Utama',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
+                  const Text('Menu Utama',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 14),
                   Row(
                     children: [
@@ -140,12 +191,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: AppTheme.primary,
                           onTap: () async {
                             await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ListScreen(),
-                              ),
-                            );
-                            setState(() {});
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const ListScreen()));
+                            _fetchCount();
                           },
                         ),
                       ),
@@ -157,83 +206,66 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: const Color(0xFF00897B),
                           onTap: () async {
                             await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const FormScreen(),
-                              ),
-                            );
-                            setState(() {});
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const FormScreen()));
+                            _fetchCount();
                           },
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Riwayat Terbaru',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
+                  // Theme toggle card
+                  InkWell(
+                    onTap: () => themeProvider.toggleTheme(),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1A2535)
+                            : const Color(0xFFF8FAFF),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: AppTheme.primary.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isDark ? Icons.light_mode : Icons.dark_mode,
+                            color: AppTheme.primary,
+                          ),
+                          const SizedBox(width: 14),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isDark
+                                    ? 'Aktifkan Light Mode'
+                                    : 'Aktifkan Dark Mode',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600, fontSize: 14),
+                              ),
+                              Text(
+                                isDark
+                                    ? 'Tampilan terang'
+                                    : 'Tampilan gelap, nyaman di malam hari',
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          Switch(
+                            value: isDark,
+                            onChanged: (_) => themeProvider.toggleTheme(),
+                            activeColor: AppTheme.primary,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  if (HealthData.records.isEmpty)
-                    _EmptyState()
-                  else
-                    ...HealthData.records.reversed
-                        .take(2)
-                        .map(
-                          (r) => Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: AppTheme.surface,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppTheme.primaryLight),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryLight,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.medical_services_outlined,
-                                    color: AppTheme.primary,
-                                    size: 18,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        r.diagnosis,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppTheme.textPrimary,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      Text(
-                                        r.tanggal,
-                                        style: const TextStyle(
-                                          color: AppTheme.textSecondary,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                 ],
               ),
             ),
@@ -273,35 +305,10 @@ class _MenuCard extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 32),
             const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
+            Text(label,
+                style: TextStyle(
+                    color: color, fontWeight: FontWeight.w600, fontSize: 13)),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primaryLight),
-      ),
-      child: const Center(
-        child: Text(
-          'Belum ada riwayat kesehatan',
-          style: TextStyle(color: AppTheme.textSecondary),
         ),
       ),
     );

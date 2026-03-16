@@ -28,11 +28,8 @@ class RecordCard extends StatelessWidget {
                       color: AppTheme.primaryLight,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
-                      Icons.medical_services_outlined,
-                      color: AppTheme.primary,
-                      size: 20,
-                    ),
+                    child: const Icon(Icons.medical_services_outlined,
+                        color: AppTheme.primary, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -42,20 +39,15 @@ class RecordCard extends StatelessWidget {
                         Text(
                           record.diagnosis,
                           style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
-                          ),
+                              fontSize: 15, fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
                           record.namaDokter,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textSecondary,
-                          ),
+                          style:
+                              const TextStyle(fontSize: 13, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -68,12 +60,9 @@ class RecordCard extends StatelessWidget {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  _buildBadge(Icons.calendar_today_outlined, record.tanggal),
-                  const SizedBox(width: 12),
-                  _buildBadge(
-                    Icons.monitor_heart_outlined,
-                    record.tekananDarah,
-                  ),
+                  _badge(Icons.calendar_today_outlined, record.tanggal),
+                  const SizedBox(width: 14),
+                  _badge(Icons.monitor_heart_outlined, record.tekananDarah),
                 ],
               ),
             ],
@@ -83,15 +72,12 @@ class RecordCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBadge(IconData icon, String text) {
+  Widget _badge(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 13, color: AppTheme.textSecondary),
+        Icon(icon, size: 13, color: Colors.grey),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-        ),
+        Text(text, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
   }
