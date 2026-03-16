@@ -3,7 +3,7 @@
 
 ---
 
-## 📖 Deskripsi Aplikasi
+##  Deskripsi Aplikasi
 
 **HealthRecord** adalah aplikasi mobile berbasis Flutter yang dirancang untuk membantu pengguna mencatat dan mengelola riwayat kesehatan pribadi secara digital, aman, dan terorganisir. Dengan aplikasi ini, pengguna tidak perlu lagi menyimpan catatan kesehatan secara manual — semua data tersimpan di cloud menggunakan **Supabase** dan dapat diakses kapan saja.
 
@@ -11,9 +11,9 @@ Setiap pengguna memiliki akun pribadi sehingga data riwayat kesehatannya bersifa
 
 ---
 
-## ✨ Fitur Aplikasi
+##  Fitur Aplikasi
 
-### 🔐 Autentikasi Pengguna
+### Autentikasi Pengguna
 Aplikasi dilengkapi dengan sistem **Login dan Register** menggunakan Supabase. Pengguna cukup mendaftar dengan email dan password, lalu dapat langsung masuk ke dalam aplikasi. Sesi login tersimpan otomatis sehingga pengguna tidak perlu login ulang setiap membuka aplikasi.
 Berikut tampilan aplikasinya:
 
@@ -22,10 +22,10 @@ https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-0
 https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-03-15%20181638.png?raw=true (register)
 
 
-### 🏠 Dashboard Utama
+### Dashboard Utama
 Halaman utama menampilkan **ringkasan data kesehatan** pengguna, termasuk total riwayat yang sudah tercatat. Dari sini pengguna dapat dengan cepat menuju halaman daftar riwayat atau langsung menambah data baru. Tersedia juga tombol toggle untuk berpindah antara **Light Mode dan Dark Mode**.
 
-### 📋 Manajemen Riwayat Kesehatan (CRUD)
+### Manajemen Riwayat Kesehatan (CRUD)
 Pengguna dapat melakukan pengelolaan data riwayat kesehatan secara lengkap:
 - **Tambah** — mencatat riwayat kesehatan baru dengan mengisi form lengkap
   
@@ -41,7 +41,7 @@ link img : https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screensh
   
 - **Hapus** — menghapus data dengan konfirmasi dialog agar tidak terjadi penghapusan tidak sengaja
 
-### 📝 Form Input Lengkap & Tervalidasi
+###  Form Input Lengkap & Tervalidasi
 Form pencatatan riwayat kesehatan terdiri dari:
 - **Tanggal Pemeriksaan** — dipilih menggunakan date picker kalender
 - **Nama Dokter / Faskes** — dilengkapi fitur dropdown dengan saran nama dokter dan fasilitas kesehatan (Puskesmas, RS Umum, berbagai spesialis)
@@ -51,7 +51,7 @@ Form pencatatan riwayat kesehatan terdiri dari:
 - **Berat & Tinggi Badan** — dua field terpisah, ini juga hanya menerima angka
 - **Catatan Tambahan** — catatan bebas dari dokter.
 
-### 🌙 Light Mode & Dark Mode
+### Light Mode & Dark Mode
 Pengguna dapat beralih antara tampilan terang dan gelap kapan saja melalui tombol toggle di halaman utama maupun ikon di AppBar. Perubahan tema berlaku secara instan di seluruh halaman aplikasi.
 
 link img : https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-03-15%20181158.png?raw=true
@@ -59,12 +59,12 @@ link img : https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screensh
 https://github.com/Manisha-05caw/minpro_pab2/blob/minpro/img/Screenshot%202026-03-15%20181222.png?raw=true
 
 
-### ☁️ Penyimpanan Cloud (Supabase)
+### Penyimpanan Cloud (Supabase)
 Seluruh data riwayat kesehatan disimpan secara aman di database **Supabase** dengan fitur Row Level Security (RLS), memastikan setiap pengguna hanya dapat mengakses data miliknya sendiri.
 
 ---
 
-## 🖼️ Tampilan Aplikasi
+## Tampilan Aplikasi
 
 | Halaman | Keterangan |
 |---------|-----------|
@@ -77,7 +77,7 @@ Seluruh data riwayat kesehatan disimpan secara aman di database **Supabase** den
 
 ---
 
-## 🧩 Widget yang Digunakan
+## Widget yang Digunakan
 
 ### Struktur & Layout
 | Widget | Kegunaan |
@@ -128,11 +128,3 @@ Seluruh data riwayat kesehatan disimpan secara aman di database **Supabase** den
 
 ---
 
-## 🛠️ Tools yang Digunakan
-
-| Tools | Kegunaan |
-|-----------|---------|
-| **Flutter** | Framework utama pengembangan aplikasi mobile |
-| **Dart** | Bahasa pemrograman |
-| **Supabase** | Backend as a Service — database dan autentikasi |
-| **Provider** | State management untuk tema aplikasi |
